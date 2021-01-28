@@ -1,0 +1,67 @@
+        !to "10print.o", cbm
+        * = $1000
+
+        !addr .orig = $10
+        !addr .dest = $12
+
+        jsr .rng
+
+.loop
+        ; store 2nd line memory address in .orig
+        lda #$28
+        sta .orig
+        lda #$04
+        sta .orig+1
+
+        ; store 1st line memory address in .dest
+        lda #$00
+        sta .dest
+        lda #$04
+        sta .dest+1
+
+        ldx #$00
+
+.scroll
+        ; move byte from (.orig) to (.dest). note: "x" is not used
+        lda (.orig,x)
+        sta (.dest,x)
+
+        ; increment .orig
+        inc .orig
+        bne +
+        inc .orig+1
+
+        ; increment .dest
++       inc .dest
+        bne +
+        inc .dest+1
+
+        ; end of screen?
++       lda .dest+1
+        cmp #$07
+        bne .scroll
+        lda .dest
+        cmp #$c0
+        bne .scroll
+
+        clc
+        ldx #40
+
+.maze
+        ; put / or \ (random) at each character of bottom line of screen
+        lda $d41b
+        and #$01
+        adc #77
+        sta $07c0-1,x
+        dex
+        bne .maze
+
+        jmp .loop
+        
+.rng
+        lda #$ff
+        sta $d40e
+        sta $d40f
+        lda #$80
+        sta $d412
+        rts
